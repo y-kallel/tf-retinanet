@@ -128,8 +128,13 @@ def make_training_config(args):
 		config = parse_additional_options(config, args.o)
 
 	if args.backbone:
+		print(args.backbone)
+		print("\n")
+		print(config)
 		config['backbone']['name'] = args.backbone
 	if args.generator:
+		print(args.generator)
+		print("\n")
 		config['generator']['name'] = args.generator
 
 	# Backbone config.
