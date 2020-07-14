@@ -31,8 +31,67 @@ if __name__ == "__main__" and __package__ is None:
 from ..              import models
 from ..backbones     import get_backbone
 from ..utils.anchors import parse_anchor_parameters
+from ..preprocessing.csv_generator import CSVGenerator
 from ..utils.gpu     import setup_gpu
 from ..utils.config  import parse_yaml, parse_additional_options
+
+
+def create_generators(args, preprocess_image):
+    """ Create generators for training and validation.
+    Args
+        args             : parseargs object containing configuration for generators.
+        preprocess_image : Function that preprocesses an image for the network.
+    """
+    common_args = {
+        'batch_size'       : args.batch_size,
+        'config'           : args.config,
+        'image_min_side'   : args.image_min_side,
+        'image_max_side'   : args.image_max_side,
+        'no_resize'        : args.no_resize,
+        'preprocess_image' : preprocess_image,
+    }
+
+    # create random transform generator for augmenting training data
+    if args.random_transform:
+        transform_generator = random_transform_generator(
+            min_rotation=-0.1,
+            max_rotation=0.1,
+            min_translation=(-0.1, -0.1),
+            max_translation=(0.1, 0.1),
+            min_shear=-0.1,
+            max_shear=0.1,
+            min_scaling=(0.9, 0.9),
+            max_scaling=(1.1, 1.1),
+            flip_x_chance=0.5,
+            flip_y_chance=0.5,
+        )
+        visual_effect_generator = random_visual_effect_generator(
+            contrast_range=(0.9, 1.1),
+            brightness_range=(-.1, .1),
+            hue_range=(-0.05, 0.05),
+            saturation_range=(0.95, 1.05)
+        )
+    else:
+        transform_generator = random_transform_generator(flip_x_chance=0.5)
+        visual_effect_generator = None
+	if args.dataset_type == 'csv':
+		train_generator = CSVGenerator(
+		    args.annotations,
+		    args.classes,
+		    transform_generator=transform_generator,
+		    visual_effect_generator=visual_effect_generator,
+		    **common_args
+		)
+
+		if args.val_annotations:
+		    validation_generator = CSVGenerator(
+			args.val_annotations,
+			args.classes,
+			shuffle_groups=False,
+			**common_args
+		    )
+		else:
+		    validation_generator = None
 
 
 def set_defaults(config):
@@ -93,6 +152,9 @@ def set_args(config, args):
 
 
 	return config
+
+def csv_list(string):
+        return string.split(',')
 
 
 def main(args=None, config=None):
