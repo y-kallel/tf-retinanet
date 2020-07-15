@@ -54,8 +54,8 @@ generator:
         - 1.5874010519681994
 
 train:
-  epochs: 50
-  steps_per_epoch: 10000
+  epochs: 1
+  steps_per_epoch: 100
   lr: 1e-5
   use_multiprocessing: false
   workers: 1
